@@ -1,6 +1,6 @@
 import cv2
-
 import config
+import draw
 import telegram
 import time
 
@@ -9,37 +9,6 @@ cap = cv2.VideoCapture(0)
 if not cap.isOpened():
     print('Cannot open camera')
     exit()
-
-def draw_rect(frame, x: int, y: int, width: int, height: int) -> None:
-    cv2.rectangle(
-        frame,
-        (x, y),
-        (x + height, y + width),
-        (0, 255, 0),
-        5
-    )
-
-    cv2.putText(
-        frame,
-        'X: ' + str(x) + '; Y: ' + str(y) + '; WIDTH: ' + str(width) + '; HEIGHT: ' + str(height),
-        (x, y - 10),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        .5,
-        (0, 255, 0),
-        1
-    )
-
-def draw_date(frame) -> None:
-    cv2.putText(
-        frame,
-        time.strftime('%Y-%m-%d %H:%M:%S'),
-        (5, 30),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1,
-        (255, 0, 0),
-        2
-    )
-
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -62,16 +31,18 @@ while cap.isOpened():
         maxSize=config.MAX_SIZE
     )
 
-    for (x, y, width, height) in found:
-        draw_rect(frame, x, y, width, height)
-
-        draw_date(frame)
-
     if len(found):
         print('DETECTED', time.strftime('%Y-%m-%d %H:%M:%S'))
+        draw.draw_date(frame)
+
+        for (x, y, width, height) in found:
+            draw.draw_rect(frame, x, y, width, height)
+
         telegram.sendPhoto(cv2.imencode('.jpg', frame)[1])
 
-    config.DEVELOP and cv2.imshow('cam', frame)
+    if config.DEVELOP:
+        cv2.imshow('cam', frame)
+
     time.sleep(config.TIMEOUT_SEC)
 
 cap.release()
